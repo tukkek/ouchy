@@ -4,8 +4,9 @@ Artificial intelligence script for Littlewargame with easily customizable builds
 # Features
 * Supports all units (except the airship and bird) and buildings
 * Expands (creates a new base) whenever appropriate
+* Abandons depleted goldmines
 * Can be used to play against any number of AI or human opponents, teams or mixed teams
-* Chooses randomly one of 6 starting builds at each game
+* Chooses randomly one of 6 starting build orders at each game
 * Highly random (even games on the same map and same starting build will always end up differently)
 * Workers repair damaged buildings
 * Workers defend themselves
