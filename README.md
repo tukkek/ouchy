@@ -7,6 +7,7 @@ Artificial intelligence script for Littlewargame with easily customizable builds
 * Can be used to play against any number of AI or human opponents, teams or mixed teams
 * Chooses randomly one of 6 starting builds at each game
 * Highly random (even games on the same map and same starting build will always end up differently)
+* Workers repair damaged buildings
 * Workers defend themselves
 * Late game scouting to find hidden bases
 * Macro strategy automatically adapts itself whenever price and supply values change (when using mods or when a new version is released)
