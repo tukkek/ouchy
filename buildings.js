@@ -92,9 +92,23 @@ if(!ai.TOWERINCREMENT){
     buildingupgrade:true,
     produce:[ai.buildings.Worker,],
     validate:function(){
+      /* Fortress are only built on specific conditions:
+       * - if the techtree has an explicit step for it (not a pool step)
+       * - if we've reached the worker limit
+       * - if we're going beast 
+       *        TODO not necessarly all future beast builds need a fortress
+       */
+      if(ai.isbuilding(ai.buildings.Fortress))return false;
       if(ai.techtree[ai.currenttier]==ai.buildings.Fortress||
           scope.getUnits({type:'Worker',player:ai.me,}).length>=ai.MAXWORKERS)
           return true;
+      if(//produce 1 Fortress if we're going beast
+          (ai.mybases().length>1||ai.neverexpand)
+            &&scope.getBuildings({player:ai.me,type:ai.buildings.Fortress.name,}).length==0&&
+          (scope.getBuildings({player:ai.me,type:ai.buildings.Den.name,}).length>0||
+          scope.getBuildings({player:ai.me,type:ai.buildings.WerewolvesDen.name,}).length>0||
+          scope.getBuildings({player:ai.me,type:ai.buildings.Laboratory.name,}).length>0)
+      )return true;
       return false;
     }
   };
@@ -121,6 +135,20 @@ if(!ai.TOWERINCREMENT){
         }
       }
     },],
+    validate:function(){
+        if(ai.isbuilding(ai.buildings.WerewolvesDen))return false;
+        var nbases=ai.mybases().length;
+        if(!ai.neverexpand&&nbases==1)return false;
+        if(scope.getBuildings({
+            player:ai.me,
+            type:ai.buildings.Den.name,
+            onlyFinshed:true,
+        }).length<=1) return false; //always have 1 den producing wolves
+        return (nbases>(scope.getBuildings({
+            player:ai.me,
+            type:ai.buildings.WerewolvesDen.name,
+        }).length+1))||ai.neverexpand;//1 WerewolvesDen per base at most
+    },
   };
   var needshouse=function(){
     return scope.getBuildings({player:ai.me,

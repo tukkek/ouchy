@@ -11,18 +11,23 @@ More info at https://github.com/tukkek/ouchy
 You can find Littlewargame at http://littlewargame.com/
 */
 if(!ai.beastmode){
+  var humanpool=[
+    ai.buildings.Barrack,ai.buildings.Forge,
+    ai.buildings.Guild,ai.buildings.Church,
+    ai.buildings.Workshop,ai.buildings.AdvancedWorkshop,
+    ai.buildings.Tower,ai.buildings.Tower,
+  ];
+  var beastpool=[
+    ai.buildings.Den,ai.buildings.Den,
+    ai.buildings.Fortress,ai.buildings.Fortress,//details at Fortress#validate
+    ai.buildings.Lair,ai.buildings.Lair,
+    ai.buildings.Laboratory,ai.buildings.Laboratory,
+    ai.buildings.Tower,ai.buildings.Tower,
+  ];
   ai.raxor=[//double rax
     ai.buildings.House,
     ai.buildings.Barrack,ai.buildings.Barrack,
-    [
-      ai.buildings.Barrack,
-      ai.buildings.Forge,
-      ai.buildings.Guild,
-      ai.buildings.Church,
-      ai.buildings.Workshop,
-      ai.buildings.AdvancedWorkshop,
-      ai.buildings.Tower,
-    ],
+    humanpool,
   ];
   ai.warlock=[ //rax into mages
     ai.buildings.House,
@@ -55,7 +60,7 @@ if(!ai.beastmode){
       ai.buildings.Lair,ai.buildings.Lair,
     ],
   ];
-  ai.catastrophe=[//den and cata into dragon
+  ai.catastrophe=[//den and cata
     ai.buildings.Den,
     ai.buildings.Workshop,
     ai.buildings.Castle,
@@ -67,22 +72,40 @@ if(!ai.beastmode){
       ai.buildings.Forge,ai.buildings.Laboratory,
     ],
   ];
-  ai.earlyjbs=[ //early expand and tower into double rax
+  ai.raxexpand=[ //rax -> expand
+    ai.buildings.House,
+    ai.buildings.Barrack,
+    ai.buildings.Castle,
+    ai.buildings.Tower,
+    humanpool,
+  ];
+  ai.tworaxexpand=[ //expand first -> 2 rax
     ai.buildings.Castle,
     ai.buildings.Tower,
     ai.buildings.House,
     ai.buildings.Barrack,ai.buildings.Barrack,
-    [
-      ai.buildings.Barrack,ai.buildings.Barrack,
-      ai.buildings.Forge,ai.buildings.Forge,
-      ai.buildings.Guild,ai.buildings.Church,
-      ai.buildings.Tower,ai.buildings.Tower,
-    ],
+    humanpool,
   ];
-  ai.techtree=ai.pick([
-    ai.pick([ai.raxor,ai.earlyjbs,ai.pick([ai.warlock,ai.paladin,]),]),
-    ai.pick([ai.beastmode,ai.beastmode,ai.catastrophe,]),
+  ai.denexpand=[ //den -> expand
+    ai.buildings.House,
+    ai.buildings.Den,
+    ai.buildings.Castle,
+    ai.buildings.Tower,
+    beastpool,
+  ];
+  ai.twodenexpand=[ //expand -> 2 den
+    ai.buildings.Castle,
+    ai.buildings.Tower,
+    ai.buildings.House,
+    ai.buildings.Den,ai.buildings.Den,
+    beastpool,
+  ];
+  var aggressive=ai.pick([
+    ai.pick([ai.raxor,ai.pick([ai.warlock,ai.paladin,]),]), //50% chance human
+    ai.pick([ai.beastmode,ai.beastmode,ai.catastrophe,]), //50% chance beast
   ]);
+  var defensive=ai.pick([ai.raxexpand,ai.denexpand,ai.tworaxexpand,ai.twodenexpand,]);
+  ai.techtree=ai.pick([aggressive,defensive,defensive,]);//jbs wants the AI to be defensive 2 out of 3 times
 }
 
 try{
