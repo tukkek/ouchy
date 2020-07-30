@@ -31,7 +31,7 @@ if(!ai.BUILDINGUPGRADEORDERPREFIX){
       chances[i]=cheapest/chances[i];//lower cost = higher chance
       totalchance+=chances[i];
     }
-    totalchance=Math.random()*totalchance;
+    totalchance=scope.getRandomNumber(0,totalchance);
     for(var i=0;i<produce.length;i++){
       totalchance-=chances[i];
       if(totalchance<=0)return produce[i];

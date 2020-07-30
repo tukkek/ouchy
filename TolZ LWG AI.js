@@ -99,70 +99,50 @@ if(!ai.distance){
     throw 'unknown building size:'+buildingname;
   }
 
-  ai.findspot=function(axisxp,axisyp,sizex,sizey,buildingname){
-    var axisx=axisxp;
-    var axisy=axisyp;
-    dance:for(var i=0;i<10000;i++){//TODO maybe make bigger?
-      var delta=ai.random(1)==0?-1:1;
+  ai.findspot=function(xp,yp,sizex,sizey,buildingname){
+    var x=xp;
+    var y=yp;
+    var mines=scope.getBuildings({type:'Goldmine'});
+    var bases=ai.mybases();
+    var cache=[];
+    //TODO add cache of visited coordinates
+    for(var i=0;i<1000000;i++){//TODO maybe make bigger?
+      var delta=ai.random(1)==0?-1:+1;
       if(ai.random(1)==0){
-        axisx+=delta;
+        x+=delta;
       }else{
-        axisy+=delta;
+        y+=delta;
       }
-      if(axisx<0||axisy<0||axisx>=scope.getMapWidth()||axisy>=scope.getMapHeight()){
-        return ai.findspot(axisxp,axisyp,sizex,sizey,buildingname);
+      if(x<0||y<0||x>=scope.getMapWidth()||y>=scope.getMapHeight()){
+          x=xp;
+          y=yp;
+          continue;
       }
-      
-      var emulator=ai.coordinatestoobject(axisx,axisy);
-      if(ai.isBuildable(axisx,axisy,axisx+sizex+1,axisy+sizey+1)){
-        var mines=scope.getBuildings({type:'Goldmine'})
-        if(ai.DEBUG&&mines.length==0){
-          throw 'No goldmines?';
-        }
-        var distancefromclosestmine=
-          ai.measuredistance(emulator,ai.findClosest(emulator,
-            mines));
-        if(ai.DEBUG&&ai.mybases().length==0){
-          throw 'No bases?';
-        }
-        if(
-          distancefromclosestmine<=3||
-          (
-            ai.measuredistance(emulator,
-              ai.findClosest(emulator,ai.mybases()))
-            <=MINEDIST
-            &&
-            distancefromclosestmine<=MINEDIST
-          )
-        ) continue dance;//looks like it's in between mine and base
-        if(ai.DEBUG&&scope.getBuildings({player:ai.me}).length==0){
-          throw 'No bases?';
-        }
-        if(
-          ai.measuredistance(emulator,ai.findClosest(emulator,
-            scope.getBuildings({player:ai.me})))<=4
-        ){
-          continue dance;//give some space between buildings
-        }
-        return [axisx,axisy];
-      }
+      var hash=x+':'+y;
+      if(cache.includes(hash))continue;
+      cache.push(hash);
+      var p=ai.coordinatestoobject(x,y);
+      if(!ai.isBuildable(x,y,x+sizex+1,y+sizey+1))continue;
+      var minedistance=ai.measuredistance(p,ai.findClosest(p,mines));
+      var basedistance=ai.measuredistance(p,ai.findClosest(p,bases));
+      var inminingpath=basedistance<=MINEDIST&&minedistance<=MINEDIST;
+      //if(inminingpath) {ai.log(minedistance+' #inminingpath');ai.log(basedistance+' #inminingpath');}
+      if(inminingpath) continue;
+      var tooclose=ai.measuredistance(p,ai.findClosest(p,
+          scope.getBuildings({player:ai.me})))<=4;
+      if(tooclose) ai.log('tooclose');
+      if(tooclose) continue;
+      return [x,y];
     }
-    ai.log('Could not place building!');
-    return false;
+    throw 'Could not place building!';
   }  
   ai.findclosestworker=function(c,workers){
-    var closestworker=
-      ai.findClosest(ai.coordinatestoobject(c.x,c.y),workers);
-    var out=[];
-    out[0]=closestworker;
-    return out;
+    return [ai.findClosest(ai.coordinatestoobject(c.x,c.y),workers),];
   }
   ai.constructBuilding  = function(newBuilding) {
-    var myPlayerNumber = ai.me;
-    var myBuildings = scope.getBuildings({player: myPlayerNumber});
-    var workers = scope.getUnits({type: "Worker", order: "Mine", player: myPlayerNumber});
+    ai.log('constructing building');
+    var myBuildings = scope.getBuildings({player: ai.me});
     var mines = scope.getBuildings({type: "Goldmine"});
-    
     var buildingX = null;
     var buildingY = null;
     var buildingLength = null;
@@ -178,11 +158,9 @@ if(!ai.distance){
     var startY = null;
     var endValue = null;
     var buildOrder = null;
-    
     var newsquare=ai.measurebuilding(newBuilding);
     var lastchoice=false;
     var currentchoice=false;
-    
     var bestspot=false;
     var bases=ai.mybases();
     var buildingsperbase=ai.separatebases();
@@ -203,21 +181,16 @@ if(!ai.distance){
     var base=ai.pick(targetbases);
     var basex=base.getX();
     var basey=base.getY();
+    ai.log('looking for spot @'+basex+':'+basey);
     for(var i=0;i<5;i++){
-      var spot=ai.findspot(
-          basex,
-          basey,
-          newsquare[0],
-          newsquare[1],
-          newBuilding);
+      var spot=ai.findspot(basex,basey,
+        newsquare[0],newsquare[1],
+        newBuilding);
       if(
         !bestspot||
         ai.distance(basex,basey,spot[0]+1,spot[1]+1)<=
         ai.distance(basex,basey,bestspot[0]+1,bestspot[y]+1)
-        //+1 offset here to reach closer to center of building
-      ){
-        bestspot=spot;
-      }
+      )bestspot=spot;//+1 offset here to reach closer to center of building
     }
     if(!bestspot){
       ai.log('Trying to pick a spot again!');
@@ -227,17 +200,17 @@ if(!ai.distance){
     
     buildOrder = "Build " + newBuilding;
     var c={x:bestspot[0],y:bestspot[1],};
-    if(ai.DEBUG&&workers.length==0){
-      throw 'No workers?';
-    }
-    scope.order(buildOrder,ai.findclosestworker(c,workers),c);
+    scope.order(buildOrder,
+        ai.findclosestworker(
+            c,
+            scope.getUnits({type: "Worker", order: "Mine", player: ai.me,})
+        ),c);
   }
 
   //Finds a location and orders construction of a castle
   ai.constructCastle = function() {
-    var myPlayerNumber = scope.getMyPlayerNumber();
-    var myBuildings = scope.getBuildings({player: myPlayerNumber});
-    var workers = scope.getUnits({type: "Worker", order: "Mine", player: myPlayerNumber});
+    var myBuildings = scope.getBuildings({player: ai.me});
+    var workers = scope.getUnits({type: "Worker", order: "Mine", player: ai.me});
     var mines = scope.getBuildings({type: "Goldmine"});
     var minesToBuilding = null;
     var allCastles = scope.getBuildings({type: "Castle"});

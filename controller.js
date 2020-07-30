@@ -1,8 +1,11 @@
 /* See section labeled ouchy.js */
 var ai=this;
-ai.DEBUG=false;
+
+ai.DEBUG=true;
 ai.DEBUGONEPLAYER=false;
 ai.DEBUGEARLYCASTLES=false;
+ai.ALLOWAGGRESSIVE=false;
+
 ai.me=scope.getMyPlayerNumber();
 ai.clock=Math.round(scope.getCurrentGameTimeInSec());
 ai.gold=scope.getGold();
@@ -49,7 +52,19 @@ if(!ai.log){
     return o1.getX()==o2.getX()&&o1.getY()==o2.getY();
   }
   ai.random=function(max){
-    return Math.floor(Math.random()*(max+1));
+    var r=scope.getRandomNumber(0,1)*max;
+    //ai.log(r+' #random');
+    r=Math.round(r);
+    //ai.log(r+' #floor');
+    return r;
+  }
+  if(ai.me==1){
+      var result='';
+      for(var i=0;i<1000;i++){
+          result+=ai.random(1)==0?0:1;
+      }
+      ai.log(result);
+      throw 'stop';
   }
   ai.pick=function(pickarray){
     return pickarray[ai.random(pickarray.length-1)];
@@ -85,7 +100,7 @@ if(!ai.log){
   }
   ai.shuffle=function(array){
     for(var i = array.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
+        var j = ai.random(i);
         var temp = array[i];
         array[i] = array[j];
         array[j] = temp;

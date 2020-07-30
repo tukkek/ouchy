@@ -105,26 +105,38 @@ if(!ai.beastmode){
     ai.pick([ai.beastmode,ai.beastmode,ai.catastrophe,]), //50% chance beast
   ]);
   var defensive=ai.pick([ai.raxexpand,ai.denexpand,ai.tworaxexpand,ai.twodenexpand,]);
-  ai.techtree=ai.pick([aggressive,defensive,defensive,]);//jbs wants the AI to be defensive 2 out of 3 times
+  ai.techtree=ai.pick([aggressive,defensive,]);
+  /*
+   * jbs asked that for a first in-game version there be 50% of castle first
+   * and 50% of defensive build. This line coincidentally ensures that.
+   * 
+   * TODO jbs has talked about letting letting the player select different AIs in the future.
+   * this would enable this line to be modified for different version: passive/aggressive/early
+   * expand/specific builds and so on
+   * 
+   * Remove this line to play with the full set of builds.
+   */
+  if(!ai.ALLOWAGGRESSIVE) ai.techtree=defensive;
 }
 
 try{
-  if(ai.clock-ai.lastassignments>=ai.PERIODARMY){
+  ai.log('micro');
+  if(ai.clock-ai.lastassignments>=ai.PERIODARMY){//micro
     ai.lastassignments=ai.clock;
     ai.assign();
   }
-  var fighting=scope.getUnits({notOfType:'Worker',player:ai.me});
+  var fighting=scope.getUnits({notOfType:'Worker',player:ai.me,});
   for(var i=0;i<fighting.length;i++){//activate powers
     var power=ai.buildings[fighting[i].getTypeName()];
     if(!power)
         continue;
-    power=power.ability
+    power=power.ability;
     if(power&&power(fighting[i])){
       //TODO cannot `return` yet because not sure if power is being actived or just spammed
     }
   }
 
-    
+  ai.log('economy');
   if(//organize economy
     ai.clock-ai.lastaccountancy>=ai.PERIODECONOMY||
     scope.getUnits(
@@ -135,6 +147,7 @@ try{
     return;
   }
 
+  ai.log('build next');
   if(ai.nextproduction){
     if(ai.canpay(ai.nextproduction[0])){
       ai.orderproduction(ai.nextproduction[0],ai.nextproduction[1]);
@@ -147,6 +160,10 @@ try{
     if(ai.produce(buildings[i]))return;
   }
   
+  if(scope.getUnits({type: "Worker", order: "Mine", player: ai.me,}).length==0)
+      return;//no builders
+      
+  ai.log('queue house');
   if(//build house
     scope.getMaxSupply()<100
     &&scope.getMaxSupply()-scope.getCurrentSupply()<10
@@ -160,6 +177,7 @@ try{
   }
   
   if(ai.queuedbuildings.length!=0){//build queued building
+    ai.log('build queue');
     var nextbuilding=ai.queuedbuildings[0];
     if(ai.neverexpand&&nextbuilding.name=='Castle'){
         ai.queuedbuildings.shift();
@@ -192,6 +210,7 @@ try{
     else ai.constructBuilding(nextbuilding.name);
     return;
   }else{//let's think of a new building to make
+    ai.log('determine next building');
     if(ai.currenttier>=ai.techtree.length){
       return;
     }
